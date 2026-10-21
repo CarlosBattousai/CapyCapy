@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CapyCapy · UPC to barcode</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+  <header><a class="brand" href="/">◒ <span>capycapy</span></a><span class="header-note">Small tool. Perfect lines.</span></header>
+  <main>
+    <div class="intro"><span class="eyebrow">PHOTO → UPC → BARCODE</span><h1>One photo.<br><span>Every barcode.</span></h1><p>Scan a list of UPCs. Get a barcode for each number.<br>Swipe up to move through your stack.</p></div>
+    <section class="photo-panel" aria-labelledby="photo-title">
+      <div><span class="step">SCAN YOUR LIST</span><h2 id="photo-title">Take a photo. Get the whole list.</h2><p>Include the full UPC column in a clear, well-lit photo. Check the detected numbers against your photo before scanning at checkout.</p></div>
+      <div class="photo-buttons"><label class="upload-button" for="camera">Take a photo ↗</label><input class="file-input" id="camera" type="file" accept="image/*" capture="environment"><label class="upload-button secondary" for="photo">Choose a photo</label><input class="file-input" id="photo" type="file" accept="image/*"></div>
+      <p id="scan-status" role="status" aria-live="polite">Photo processing stays on your device.</p><progress id="scan-progress" max="1" value="0" hidden></progress>
+      <div id="photo-review" hidden><img id="photo-preview" alt="Your uploaded UPC list"><div class="review-fields"><label for="detected">Review detected text</label><p>Edit missed or misread numbers here. Both UPCs on a comma-separated line are included. Duplicate entries are kept.</p><textarea id="detected" rows="7" spellcheck="false"></textarea><button id="make-stack" class="primary" type="button">Make all barcodes ↑</button></div></div>
+      <button id="sample-list" class="example" type="button">Try the numbers from your example photo →</button>
+    </section>
+    <section id="stack-section" hidden aria-labelledby="stack-title"><div class="stack-heading"><div><span class="step">YOUR BARCODE STACK</span><h2 id="stack-title">Swipe up for the next UPC.</h2></div><span id="stack-summary" role="status"></span></div><p class="stack-help">Swipe up or use the arrows. Check each number against your photo.</p><div id="stack" class="barcode-stack" tabindex="0" aria-label="Barcodes. Scroll down to see the next number."></div><div class="stack-controls"><button id="previous" type="button">↑ Previous</button><span id="position" aria-live="polite"></span><button id="next" type="button">Next ↓</button></div></section>
+    <section class="workspace" aria-label="UPC barcode generator">
+      <div class="input-panel"><span class="step">01 / YOUR NUMBER</span><h2>Start with a UPC.</h2><p>Enter 12 digits, or 11 and we’ll calculate the check digit.</p>
+        <form id="form" novalidate><label for="upc">UPC number</label><input id="upc" name="upc" inputmode="numeric" autocomplete="off" placeholder="e.g. 036000291452" aria-describedby="hint error"><div id="hint" class="hint">UPC-A · 11 or 12 digits</div><p id="error" role="alert"></p><button class="primary" type="submit">Generate barcode <span>↗</span></button></form>
+        <button class="example" id="example" type="button">Just exploring? Try an example →</button>
+      </div>
+      <div class="output-panel"><div class="preview-top"><span class="step">02 / YOUR BARCODE</span><span class="badge" id="badge">PREVIEW</span></div><div id="result" aria-live="polite"><div class="empty"><div class="lines">▌▏▎▌▏▌▎▏▌▎▏</div><h3>A little space for your lines.</h3><p>Your barcode will appear here.</p></div></div><div class="actions"><button id="download" disabled>↓ Download SVG</button><button id="print" disabled>Print ↗</button></div><p class="output-note">Vector sharp. Ready for labels, packaging, and more.</p></div>
+    </section>
+    <div class="details"><span><b>01</b> Built for UPC-A</span><span><b>02</b> Check digit verified</span><span><b>03</b> Generated on your device</span></div>
+    <p class="footnote">Creates a barcode from your number. Does not register a product or assign a GS1 identifier.</p>
+  </main><footer><span>Made for the simple things.</span><span>CAPYCAPY / UPC TOOL</span></footer><script src="/ocr/tesseract.min.js"></script><script type="module" src="/app.js"></script><script type="module" src="/scan.js"></script>
+</body></html>

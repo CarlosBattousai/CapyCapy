@@ -1,35 +1,35 @@
 # Android test APK
 
-CapyCapy is packaged as an offline Android WebView app with a native camera/image chooser, SVG save dialog, print dialog, and Android back navigation. All application files, OCR workers, WebAssembly, and English language data are bundled. A local HTTPS origin serves these assets inside the app; no web server is needed. Android 8.0 (API 26) or newer and an up-to-date Android System WebView are required.
+Version 1.0.2 replaces the APK's browser OCR with bundled Google ML Kit Text Recognition. The recognizer runs on the original color photo on the device, handles EXIF orientation, and reads the whole image by default. Optional column selection remains available. No OCR API key, model download, web server, or cloud photo upload is required. An updated Android System WebView is required for the interface.
 
-The test APK is written to `/workspace/artifacts/CapyCapy-android-test.apk`.
+Native text lines are ordered by position; the shared UPC extractor discards SKU/brand strings and preserves separate UPCs on the same row. Incomplete or invalid numbers are held for review without guessing digits. A scan with no valid UPC stays in photo review. Barcodes use crisp canvas modules and a plain-text UPC underneath. Photo capture, SVG saving, and printing use Android system dialogs. System-bar insets are applied to a container around WebView to prevent content overlapping the status bar.
 
-## Rebuild on Linux
+## Build on Linux
 
-Requires Node.js 22+, a Java 21 runtime with `keytool`, Python 3, and curl. The build uses Google's pinned Android 35 SDK/build tools and the pinned Eclipse compiler, verifies their publisher checksums, and does not need Gradle or a JDK installation.
+Requires Node.js 22+, Python 3, curl, and a Java 21 JDK. The Gradle Android application bundles ML Kit, including its text model and native libraries, for ARM64, ARMv7, and x86_64.
 
 ```sh
 cd /workspace/CapyCapy
-npm ci --cache /tmp/capy-npm-cache
 python3 android/prepare-tools.py
 npm test
 bash android/build-apk.sh
 ```
 
-`CAPY_ANDROID_TOOLS` overrides the default tool directory `/workspace/android-tools`. The testing keystore is created there and reused for updates. It is separate from source files and is intended for local testing, not a production release. Preserve this keystore to update an installed test build without uninstalling it.
+The tool preparation script verifies the pinned Android 35 platform/build tools and Gradle 8.11.1 checksums. Maven dependencies come from Google's official repository and Maven Central with TLS verification. `CAPY_ANDROID_TOOLS` overrides `/workspace/android-tools`; a standard JDK can be selected using `JAVA_HOME`. This environment's JDK executables wrap its installed JDK modules in a writable copy of the runtime.
 
-## Install and test
+The script outputs `/workspace/artifacts/CapyCapy-android-test.apk`. `CAPY_SIGNING_KEY` selects the testing keystore; its default is `/workspace/android-tools/capy-test.keystore`. Keep the same testing key to install updates over previous builds. The testing key is not committed and is not intended for production releases.
 
-Transfer/download the APK to your Android phone, open it, and allow installation from the app used to open the download if Android asks. Install CapyCapy, then:
+## Device checks
 
-1. Take a photo or choose an existing image containing several UPCs. Adjust the green box to include the UPC column and exclude the SKU column, then tap **Read UPC column**. Include both numbers on comma-separated rows.
-2. Compare the detected numbers with the photo. A comma-separated pair should generate two cards. Invalid check digits stay available for correction.
-3. Swipe up through the stack and confirm that every barcode has its UPC immediately underneath.
-4. Save a barcode using Download barcode and choose a destination in Android's file picker.
-5. At the final card, Scan more should open the camera and append new numbers. Exit should clear the stack and return to the start.
+1. Install/update CapyCapy on Android 8.0 or newer.
+2. Take or choose a photo of the entire SKU/UPC list. Tap **Read UPCs**; leave the selection full-width first.
+3. Compare the resulting UPCs against the photo. Comma-separated pairs should give two cards. SKU identifiers should not appear in the barcode stack.
+4. Swipe through the barcodes and test an SVG download.
+5. At the end, Scan more should append another photo's results; Exit should return to the start. An unreadable photo should remain in review instead of showing an empty stack.
+6. Check that content clears both Android system bars.
 
-The APK was compiled, aligned, and signature-verified; its bundled assets were checked and its shared web application passed automated tests and Android-size browser checks. Actual APK installation, native camera/picker, and native save/print require device testing and have not been verified on physical hardware in this environment.
+A native instrumentation test at `src/androidTest/java/com/capycapy/app/NativeOcrTest.java` exercises the bundled recognizer on a generated shaded, slightly rotated multi-column list. With an emulator/device connected, run `gradle -p android connectedDebugAndroidTest` using the prepared Gradle/JDK/SDK environment. Browser bridge checks isolate native result handling from engine recognition, and `npm test` covers UPC extraction and encoding. Synthetic-image checks do not establish accuracy on the original user photo or a physical phone.
 
-Version 1.0.1 uses the smaller `4.0.0_best_int` OCR model with a separate cache key, reuses the OCR worker across photos, crops/resizes the selected UPC column, and uses local thresholding for paper shadows. Incomplete photo numbers require all 12 digits instead of receiving a guessed check digit. Barcode display uses an integer-pixel canvas with the UPC underneath; vector SVG downloads remain available. A synthetic shaded, tilted two-column image produced all 11 expected numeric candidates, with its incomplete entry held for review, in 2.2 seconds cold and 1.1 seconds warm on the development machine. These are browser timings, not phone benchmarks or verification of the original supplied photo.
+Camera photos use a private temporary cache file. ML Kit processes photos locally; its SDK may send operational diagnostics according to its terms. This app does not register UPC identifiers with GS1. Recognition can still miss or misread digits; verify numbers against the source photo.
 
-Images are processed on device. Camera captures use an app-private temporary cache file that is removed on the next capture or Activity destruction. OCR data may be cached by WebView. OCR can miss or misread digits; verify against the source image. This build does not register UPC identifiers with GS1.
+Current validation: release/debug APK builds and the native test APK build passed, as did all 12 shared unit tests, native-bridge browser checks, packaged-asset checks, and release signature verification. Native OCR execution remains **unrun**: the software-only cloud emulator connected to ADB but did not reach Android's package manager/boot completion within the bounded startup window. No native recognition accuracy or physical-phone performance pass is claimed. The original supplied photo still needs a device check.

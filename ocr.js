@@ -1,6 +1,23 @@
 // One fast OCR worker per app session. Loading language data is not repeated per photo.
 let workerPromise;
 let report = () => {};
+let nativeRequestId = 0;
+export function hasNativeReader() {
+  return !!window.CapyAndroid && typeof window.CapyAndroid.recognizePhoto === 'function';
+}
+export function readNativePhoto(left,right) {
+  return new Promise((resolve,reject)=>{
+    const id=++nativeRequestId;
+    const finish=event=>{
+      if(event.detail.id!==id) return;
+      clearTimeout(timer);window.removeEventListener('capy-ocr',finish);
+      if(event.detail.error) reject(new Error(event.detail.error));else resolve({data:{text:event.detail.text}});
+    };
+    const timer=setTimeout(()=>{window.removeEventListener('capy-ocr',finish);reject(new Error('Photo reading timed out. Try again.'));},45000);
+    window.addEventListener('capy-ocr',finish);
+    window.CapyAndroid.recognizePhoto(id,left,right);
+  });
+}
 export function getReader(onProgress) {
   report = onProgress || (()=>{});
   if (!workerPromise) {

@@ -1,7 +1,7 @@
 import {extractUPCs} from './photo.js';
 import {normalizeUPC,barcodeSVG} from './barcode.js';
 import {barcodePreview} from './preview.js';
-import {getReader,prepareColumn} from './ocr.js';
+import {getReader,prepareColumn,hasNativeReader,readNativePhoto} from './ocr.js';
 const $ = id => document.getElementById(id);
 let entries = [], observer, imageURL, active = 0, busy = false;
 let append = false;
@@ -97,10 +97,10 @@ async function loadPhoto(file) {
     $('photo-preview').src=imageURL;
     await $('photo-preview').decode();
     $('crop-editor').hidden=false;updateCrop();
-    $('scan-status').textContent='Keep the UPC column in the green box, then tap Read UPC column. Leave the SKU column outside.';
+    $('scan-status').textContent='Tap Read UPCs to scan the whole list. SKU codes are ignored. Narrow the green box only if needed.';
     $('crop-editor').scrollIntoView({behavior:'smooth',block:'start'});
     // Warm the small language model while the user checks the column selection.
-    getReader().catch(()=>{});
+    if(!hasNativeReader()) getReader().catch(()=>{});
   } catch { $('scan-status').textContent='Could not open this photo. Please choose a JPG or PNG.'; }
   finally {setBusy(false);$('camera').value='';$('photo').value='';}
 }
@@ -110,22 +110,32 @@ async function scanColumn() {
   $('scan-progress').hidden=false;$('scan-progress').value=0;
   $('scan-status').textContent='Reading UPC column…';
   try {
+    let result;
+    if(hasNativeReader()) {
+      $('scan-status').textContent='Reading UPCs with Android photo recognition…';
+      result=await readNativePhoto(Number($('crop-left').value),Number($('crop-right').value));
+    } else {
     const worker=await getReader(message=>{
       if(message.status==='recognizing text') { $('scan-progress').value=message.progress; $('scan-status').textContent=`Reading UPC column… ${Math.round(message.progress*100)}%`; }
     });
     const image=await prepareColumn($('photo-preview'),Number($('crop-left').value),Number($('crop-right').value));
-    const {data}=await worker.recognize(image);
+    result=await worker.recognize(image);
+    }
+    const {data}=result;
     const found=extractUPCs(data.text,{photo:true});
     // Do not present SKU names or OCR garbage as editable UPC data.
     $('detected').value=found.map(entry=>entry.source).join('\n');$('photo-review').hidden=false;
     if(found.length) {
       const firstNew=append?entries.length:0;
       entries=append?[...entries,...found]:found;append=false;
-      render();go(firstNew);$('stack-section').scrollIntoView({behavior:'smooth',block:'start'});
+      if(entries.some(entry=>entry.upc)) { render();go(firstNew); }
+      else { $('stack').replaceChildren();$('stack-section').hidden=true; }
+      if(found.some(entry=>entry.upc)) $('stack-section').scrollIntoView({behavior:'smooth',block:'start'});
+      else $('photo-review').scrollIntoView({behavior:'smooth',block:'start'});
       const seconds=((performance.now()-started)/1000).toFixed(1);
-      $('scan-status').textContent=`Read ${found.length} UPC numbers in ${seconds}s. Check each number against your photo. Incomplete or invalid numbers need correction.`;
+      $('scan-status').textContent=found.some(entry=>entry.upc) ? `Read ${found.length} UPC numbers in ${seconds}s. Check each number against your photo. Incomplete or invalid numbers need correction.` : 'No complete, valid UPCs were read. Please try another photo or adjust the selection. The incomplete numbers below need correction.';
     } else $('scan-status').textContent='No UPCs could be read in this column. Adjust the green box to include the full UPC numbers and try again, or enter the UPCs below.';
-  } catch { $('scan-status').textContent='Could not read the selected column. Adjust the box or use a clearer JPG or PNG and try again.'; }
+  } catch(error) { $('scan-status').textContent=error.message || 'Could not read the photo. Try a clearer image or narrow the selection to the UPC column.'; }
   finally {setBusy(false);$('scan-progress').hidden=true;}
 }
 for(const id of ['camera','photo']) $(id).addEventListener('change',event=>loadPhoto(event.target.files[0]));
@@ -139,6 +149,11 @@ $('sample-list').addEventListener('click',()=>{
 $('make-stack').addEventListener('click',()=>{
   const found=extractUPCs($('detected').value,{photo:photoMode});
   if(!found.length) { $('scan-status').textContent='Add at least one 11- or 12-digit number to the review box.';return; }
+  if(photoMode && !found.some(entry=>entry.upc)) {
+    $('scan-status').textContent='These numbers are incomplete or have invalid check digits. Correct them from the photo or take another photo before making barcodes.';
+    if(!append) $('stack-section').hidden=true;
+    return;
+  }
   const firstNew=append?entries.length:0; entries=append?[...entries,...found]:found; append=false;render();go(firstNew);
   $('stack-section').scrollIntoView({behavior:'smooth'});
 });

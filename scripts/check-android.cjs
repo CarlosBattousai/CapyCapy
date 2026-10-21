@@ -16,6 +16,7 @@ const {chromium,devices}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
  require('fs').writeFileSync('/tmp/capy-column-test.png',Buffer.from(png,'base64'));
  const file={name:'list.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')};
  await page.locator('#photo').setInputFiles(file);await page.waitForSelector('#crop-editor:not([hidden])');
+ await page.locator('#crop-left').evaluate(el=>{el.value='30';el.dispatchEvent(new Event('input'));});await page.locator('#crop-right').evaluate(el=>{el.value='78';el.dispatchEvent(new Event('input'));});
  await page.click('#read-column');
  await page.waitForFunction(()=>!document.getElementById('read-column').disabled,{timeout:120000});
  console.log('FIRST:',await page.locator('#scan-status').innerText());

@@ -1,7 +1,7 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { readdirSync } from 'node:fs';
-const files = {'/':'index.html','/style.css':'style.css','/app.js':'app.js','/barcode.js':'barcode.js','/photo.js':'photo.js','/scan.js':'scan.js','/ocr/tesseract.min.js':'node_modules/tesseract.js/dist/tesseract.min.js','/ocr/worker.min.js':'node_modules/tesseract.js/dist/worker.min.js','/ocr-lang/eng.traineddata.gz':'node_modules/@tesseract.js-data/eng/4.0.0/eng.traineddata.gz'};
+const files = {'/':'index.html','/style.css':'style.css','/app.js':'app.js','/barcode.js':'barcode.js','/photo.js':'photo.js','/preview.js':'preview.js','/ocr.js':'ocr.js','/scan.js':'scan.js','/ocr/tesseract.min.js':'node_modules/tesseract.js/dist/tesseract.min.js','/ocr/worker.min.js':'node_modules/tesseract.js/dist/worker.min.js','/ocr-lang/eng.traineddata.gz':'node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz'};
 for (const name of readdirSync(new URL('node_modules/tesseract.js-core/',import.meta.url))) {
   if (/^tesseract-core[\w.-]+\.(js|wasm)$/.test(name)) files['/ocr-core/'+name]='node_modules/tesseract.js-core/'+name;
 }

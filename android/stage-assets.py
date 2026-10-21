@@ -7,7 +7,7 @@ web = root / 'android/build/assets/web'
 if web.exists():
     shutil.rmtree(web)
 web.mkdir(parents=True)
-for name in ['index.html', 'style.css', 'app.js', 'barcode.js', 'photo.js', 'scan.js']:
+for name in ['index.html', 'style.css', 'app.js', 'barcode.js', 'photo.js', 'scan.js', 'preview.js', 'ocr.js']:
     shutil.copy2(root / name, web / name)
 for directory in ['ocr', 'ocr-core', 'ocr-lang']:
     (web / directory).mkdir()
@@ -16,7 +16,7 @@ for name in ['tesseract.min.js', 'worker.min.js']:
 for source in (root / 'node_modules/tesseract.js-core').glob('tesseract-core*'):
     if source.suffix in ['.js', '.wasm']:
         shutil.copy2(source, web / 'ocr-core' / source.name)
-shutil.copy2(root / 'node_modules/@tesseract.js-data/eng/4.0.0/eng.traineddata.gz', web / 'ocr-lang/eng.traineddata.gz')
+shutil.copy2(root / 'node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz', web / 'ocr-lang/eng.traineddata.gz')
 (web / 'licenses').mkdir()
 for package in ['tesseract.js', 'tesseract.js-core']:
     license_file = root / 'node_modules' / package / ('LICENSE.md' if package == 'tesseract.js' else 'LICENSE')

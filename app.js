@@ -1,4 +1,5 @@
 import { normalizeUPC, barcodeSVG } from './barcode.js';
+import {barcodePreview} from './preview.js';
 const $ = id => document.getElementById(id);
 let current = null;
 function generate() {
@@ -6,7 +7,7 @@ function generate() {
     const upc = normalizeUPC($('upc').value);
     current = {upc, svg:barcodeSVG(upc)};
     $('error').textContent = ''; $('upc').removeAttribute('aria-invalid');
-    $('result').innerHTML = current.svg;
+    $('result').replaceChildren(barcodePreview(upc));
     $('badge').textContent = 'VERIFIED UPC-A';
     $('download').disabled = false; $('print').disabled = false;
   } catch (error) {

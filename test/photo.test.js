@@ -19,3 +19,13 @@ test('calculates missing check digit and flags it for confirmation',()=>{
 test('does not split longer numbers or mistake alphanumeric SKUs for UPCs',()=>{
   assert.deepEqual(extractUPCs('1234567890123 AA123456789012 123456789012X'),[]);
 });
+test('joins OCR-split UPC digits while ignoring numeric and alphanumeric SKU columns',()=>{
+  assert.deepEqual(extractUPCs('B0957766 199 766 111 676 Free People\n12345678 840494208205 DOEN').map(e=>e.upc),['199766111676','840494208205']);
+});
+test('photo OCR never invents a digit for an incomplete 11-digit number',()=>{
+  const [entry]=extractUPCs('A151934 15344212989 BOSS HUGO BOSS',{photo:true});
+  assert.equal(entry.upc,null);assert.equal(entry.source,'15344212989');assert.match(entry.error,/no digits were guessed/);
+});
+test('noise and SKU letters do not get substituted into barcode numbers',()=>{
+  assert.deepEqual(extractUPCs('AA981176 B2872695 S4O4942O82O5 O36OOO29I452 !@#$'),[]);
+});
